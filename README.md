@@ -1,163 +1,124 @@
 # Gamedev
 
-This guide sets up your project in the existing `Gamedev` root folder, with a separated frontend and backend:
+## What This System Is For
 
-- `frontend` -> React (JavaScript)
-- `backend` -> Node.js + Express
+This project is a monitoring dashboard for a game economy that sells gems and receives payment in Ethereum.
 
-## 1. Prerequisites
+The main goal of the system is to help the developer monitor incoming ETH from in-game gem purchases.
+
+This system is designed to:
+
+- track incoming Ethereum sent by players when they buy gems
+- show a dashboard summary of incoming revenue
+- display wallet-focused information for the developer wallet
+- show activity logs related to purchase events and wallet monitoring
+- connect to Ganache later for local blockchain testing
+
+Important limitation of the current concept:
+
+- this system is for monitoring incoming ETH only
+- it is not intended to send ETH to other wallets
+- it is currently UI-focused and uses mock data for display
+
+## Current Features
+
+The frontend currently includes:
+
+- loading screen before entering the dashboard
+- collapsible sidebar navigation
+- Dashboard page for gem purchase monitoring
+- Wallet page focused on the developer revenue wallet
+- Activity page for monitoring events and transaction-related status
+- ETH conversion display for PHP and USD
+- purchase transaction batching with pagination controls
+- responsive layout for desktop, tablet, and mobile
+
+## Project Structure
+
+This project uses a separated frontend and backend structure:
+
+```text
+Gamedev/
+	README.md
+	frontend/
+	backend/
+```
+
+### Frontend
+
+The frontend is built with React and Vite.
+
+Suggested structure already being used:
+
+```text
+frontend/src/
+	application/
+	data/
+	domain/
+	infrastructure/
+	pages/
+	presentation/
+		components/
+		styles/
+			components/
+```
+
+Clean architecture note:
+
+- UI components stay in `presentation/components`
+- CSS stays in `presentation/styles`
+- business logic should go into `application`
+- domain rules should stay in `domain`
+- external integrations such as Ganache or backend API calls should go into `infrastructure`
+
+### Backend
+
+The backend is intended to expose APIs for wallet status, transaction history, and future Ganache integration.
+
+At the moment, the backend can remain simple until the monitoring logic is connected.
+
+## Prerequisites
 
 Install these first:
 
-- Node.js LTS (includes npm): https://nodejs.org/
+- Node.js LTS: https://nodejs.org/
 - Git (optional): https://git-scm.com/
 
-Check versions in PowerShell:
+Check versions:
 
 ```powershell
 node -v
 npm -v
 ```
 
-## 2. Use Your Existing Root Folder
+## Run The Project
 
-You already have:
-
-```text
-Gamedev/
-```
-
-Open terminal in this folder:
-
-```powershell
-cd "c:\Users\Keane\Desktop\Git Uploads\Gamedev"
-```
-
-Everything below will be created inside this root.
-
-## 3. Create Frontend (React JavaScript)
-
-Create a React app using Vite in a folder named `frontend`:
-
-```powershell
-npm create vite@latest frontend -- --template react
-```
-
-Install dependencies:
-
-```powershell
-cd frontend
-npm install
-```
-
-Run frontend dev server:
-
-```powershell
-npm run dev
-```
-
-By default, Vite usually runs at:
-
-```text
-http://localhost:5173
-```
-
-Go back to root:
-
-```powershell
-cd ..
-```
-
-## 4. Create Backend Folder
-
-Create backend project folder and initialize Node:
-
-```powershell
-mkdir backend
-cd backend
-npm init -y
-```
-
-Install Express and CORS:
-
-```powershell
-npm install express cors
-```
-
-Create `backend/server.js` with:
-
-```js
-const express = require("express");
-const cors = require("cors");
-
-const app = express();
-const PORT = 5000;
-
-app.use(cors());
-app.use(express.json());
-
-app.get("/api/health", (req, res) => {
-	res.json({ message: "Backend is running" });
-});
-
-app.listen(PORT, () => {
-	console.log(`Server running on http://localhost:${PORT}`);
-});
-```
-
-Run backend:
-
-```powershell
-node server.js
-```
-
-Test backend endpoint in browser:
-
-```text
-http://localhost:5000/api/health
-```
-
-## 5. Final Folder Structure
-
-After setup, your root folder should look like this:
-
-```text
-Gamedev/
-	README.md
-	frontend/
-		package.json
-		src/
-		...
-	backend/
-		package.json
-		server.js
-		...
-```
-
-## 6. Run Frontend and Backend Together
-
-Open two terminals:
-
-Terminal 1:
+### Frontend
 
 ```powershell
 cd "c:\Users\Keane\Desktop\Git Uploads\Gamedev\frontend"
+npm install
 npm run dev
 ```
 
-Terminal 2:
+### Backend
 
 ```powershell
 cd "c:\Users\Keane\Desktop\Git Uploads\Gamedev\backend"
+npm install
 node server.js
 ```
 
-## 7. Optional Next Step (Connect Frontend to Backend)
+## Current System Status
 
-In React, call your backend API at:
+Right now, this project is mainly a frontend prototype for the monitoring system.
 
-```text
-http://localhost:5000/api/health
-```
+That means:
 
-Later, you can add environment variables and proxy settings for cleaner API URLs.
+- the UI is already structured around Dashboard, Wallet, and Activity
+- the data shown in the interface is currently mock data
+- the next main step is integrating Ganache or backend APIs for real transaction monitoring
+
+## Planned Next Step
+
+The next logical feature is to connect the frontend to the backend and then connect the backend to Ganache so the dashboard can read actual incoming ETH transactions from gem purchases.
