@@ -2,34 +2,30 @@ import { useState } from "react";
 import { ArrowDownOutlined, FireOutlined, CrownOutlined } from "@ant-design/icons";
 import "../styles/components/Overview.css";
 
-function Overview() {
+const ETH_PER_GEM = 0.001;
+
+function getDisplayGems(tx) {
+  const direct = Number(tx?.gems || 0);
+  if (direct > 0) {
+    return direct;
+  }
+
+  const gross = Number(tx?.grossAmount || 0);
+  if (gross <= 0) {
+    return 0;
+  }
+
+  return Math.max(0, Math.round(gross / ETH_PER_GEM));
+}
+
+function Overview({ ethData, loading, error }) {
   const transactionsPerPage = 10;
-  const totalIncomingEth = 12.5;
-  const todayIncomingEth = 2.8;
-  const totalGemsPurchased = 4250;
-  const walletAddress = "0x742d35Cc6634C0532925a3b844Bc158e1B5a";
+  const totalIncomingEth = ethData?.stats?.totalIncomingEth ?? 0;
+  const todayIncomingEth = ethData?.stats?.todayIncomingEth ?? 0;
+  const totalGemsPurchased = ethData?.stats?.totalGemsPurchased ?? 0;
+  const walletAddress = ethData?.walletAddress ?? "Not configured";
   const [currentPage, setCurrentPage] = useState(1);
-
-  const transactionTemplates = [
-    { playerName: "Player_Alpha", gems: 500, amount: 0.5, status: "confirmed" },
-    { playerName: "Player_Beta", gems: 1200, amount: 1.2, status: "confirmed" },
-    { playerName: "Player_Gamma", gems: 300, amount: 0.3, status: "confirmed" },
-    { playerName: "Player_Delta", gems: 800, amount: 0.8, status: "confirmed" },
-    { playerName: "Player_Epsilon", gems: 450, amount: 0.45, status: "confirmed" },
-  ];
-
-  const transactions = Array.from({ length: 28 }, (_, index) => {
-    const template = transactionTemplates[index % transactionTemplates.length];
-
-    return {
-      id: index + 1,
-      playerName: `${template.playerName}_${index + 1}`,
-      gems: template.gems + index * 15,
-      amount: Number((template.amount + index * 0.04).toFixed(2)),
-      timestamp: `${2 + index * 3} minutes ago`,
-      status: template.status,
-    };
-  });
+  const transactions = ethData?.transactions ?? [];
 
   const totalPages = Math.ceil(transactions.length / transactionsPerPage);
   const startIndex = (currentPage - 1) * transactionsPerPage;
@@ -40,7 +36,11 @@ function Overview() {
     <div className="overview-section">
       <div className="overview-header">
         <h1 className="overview-title">Gem Purchase Monitor</h1>
-        <p className="overview-subtitle">Real-time incoming ETH from game purchases</p>
+        <p className="overview-subtitle">
+          Real-time incoming ETH from game purchases
+          {loading ? " • syncing" : " • live"}
+          {error ? " • fallback data" : ""}
+        </p>
       </div>
 
       <div className="kpi-grid">
@@ -99,7 +99,7 @@ function Overview() {
               <tr>
                 <th>Player</th>
                 <th>Gems Purchased</th>
-                <th>Amount (ETH)</th>
+                <th>Purchase / Share (ETH)</th>
                 <th>Time</th>
                 <th>Status</th>
               </tr>
@@ -109,10 +109,10 @@ function Overview() {
                 <tr key={tx.id} className="transaction-row">
                   <td className="player-name">{tx.playerName}</td>
                   <td className="gems-amount">
-                    <span className="gem-badge">{tx.gems}</span>
+                    <span className="gem-badge">{getDisplayGems(tx)}</span>
                   </td>
                   <td className="eth-amount">
-                    <span className="amount-highlight">+{tx.amount.toFixed(2)}</span>
+                    <span className="amount-highlight">{tx.grossAmount.toFixed(4)} / {tx.developerShareAmount.toFixed(4)}</span>
                     <span className="eth-sym"> Ξ</span>
                   </td>
                   <td className="tx-time">{tx.timestamp}</td>
@@ -165,7 +165,7 @@ function Overview() {
               <h3>Philippine Peso</h3>
               <span className="currency-code">PHP</span>
             </div>
-            <p className="conversion-rate">{(totalIncomingEth * 3250).toLocaleString()}</p>
+            <p className="conversion-rate">{(ethData?.stats?.phpValue ?? 0).toLocaleString()}</p>
             <p className="conversion-meta">₱ per {totalIncomingEth} ETH</p>
           </div>
 
@@ -174,7 +174,7 @@ function Overview() {
               <h3>US Dollar</h3>
               <span className="currency-code">USD</span>
             </div>
-            <p className="conversion-rate">{(totalIncomingEth * 3800).toLocaleString()}</p>
+            <p className="conversion-rate">{(ethData?.stats?.usdValue ?? 0).toLocaleString()}</p>
             <p className="conversion-meta">$ per {totalIncomingEth} ETH</p>
           </div>
 
@@ -183,7 +183,7 @@ function Overview() {
               <h3>Today's PHP</h3>
               <span className="currency-code">PHP</span>
             </div>
-            <p className="conversion-rate">{(todayIncomingEth * 3250).toLocaleString()}</p>
+            <p className="conversion-rate">{(ethData?.stats?.todayPhpValue ?? 0).toLocaleString()}</p>
             <p className="conversion-meta">₱ per {todayIncomingEth} ETH</p>
           </div>
 
@@ -192,7 +192,7 @@ function Overview() {
               <h3>Today's USD</h3>
               <span className="currency-code">USD</span>
             </div>
-            <p className="conversion-rate">{(todayIncomingEth * 3800).toLocaleString()}</p>
+            <p className="conversion-rate">{(ethData?.stats?.todayUsdValue ?? 0).toLocaleString()}</p>
             <p className="conversion-meta">$ per {todayIncomingEth} ETH</p>
           </div>
         </div>

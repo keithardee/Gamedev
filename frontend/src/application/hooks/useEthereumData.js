@@ -1,44 +1,58 @@
 import { useState, useEffect } from "react";
+import { fetchEthereumSnapshot } from "../../infrastructure/http/ethereumApi";
+import { mapMonitoringSnapshot, MOCK_MONITORING_DATA } from "../services/monitoringMapper";
+
+function getSourceWalletFromUrl() {
+  if (typeof window === "undefined") {
+    return "";
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  return (params.get("sourceWallet") || "").trim();
+}
 
 function useEthereumData() {
-  const [ethData, setEthData] = useState({
-    balance: 2.5,
-    address: "0x742d35Cc6634C0532925a3b844Bc158e1B5a",
-    lastUpdate: "Just now",
-    transactions: [],
-  });
+  const [ethData, setEthData] = useState(MOCK_MONITORING_DATA);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchEthData = async () => {
-      setLoading(true);
-      try {
-        // Replace with actual backend API call to your Node.js server
-        // const response = await fetch("http://localhost:5000/api/ethereum");
-        // const data = await response.json();
-        // setEthData(data);
+    let isMounted = true;
 
-        // For now, use mock data
-        setEthData({
-          balance: 2.5,
-          address: "0x742d35Cc6634C0532925a3b844Bc158e1B5a",
-          lastUpdate: new Date().toLocaleTimeString(),
-          transactions: [
-            { type: "Received", amount: 0.5, time: "2 minutes ago" },
-            { type: "Received", amount: 2.0, time: "15 minutes ago" },
-            { type: "Received", amount: 0.3, time: "32 minutes ago" },
-          ],
-        });
+    const fetchEthData = async () => {
+      if (isMounted) {
+        setLoading(true);
+      }
+
+      try {
+        const sourceWallet = getSourceWalletFromUrl();
+        const snapshot = await fetchEthereumSnapshot({ sourceWallet });
+        const mappedData = mapMonitoringSnapshot(snapshot);
+
+        if (isMounted) {
+          setEthData(mappedData);
+          setError(null);
+        }
       } catch (err) {
-        setError(err.message);
+        if (isMounted) {
+          setError(err.message);
+          setEthData((current) => current || MOCK_MONITORING_DATA);
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchEthData();
+    const pollingId = setInterval(fetchEthData, 8000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(pollingId);
+    };
   }, []);
 
   return { ethData, loading, error };

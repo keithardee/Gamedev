@@ -1,11 +1,30 @@
 import { BankOutlined, SafetyCertificateOutlined, WalletOutlined } from "@ant-design/icons";
 import "../styles/components/WalletOverview.css";
 
-function WalletOverview() {
-  const walletAddress = "0x742d35Cc6634C0532925a3b844Bc158e1B5a";
-  const ethBalance = 12.5;
-  const usdValue = 47500;
-  const phpValue = 406250;
+const ETH_PER_GEM = 0.001;
+
+function getDisplayGems(tx) {
+  const direct = Number(tx?.gems || 0);
+  if (direct > 0) {
+    return direct;
+  }
+
+  const gross = Number(tx?.grossAmount || 0);
+  if (gross <= 0) {
+    return 0;
+  }
+
+  return Math.max(0, Math.round(gross / ETH_PER_GEM));
+}
+
+function WalletOverview({ ethData, loading, error }) {
+  const walletAddress = ethData?.walletAddress ?? "Not configured";
+  const walletMode = ethData?.walletMode ?? "virtual";
+  const ethBalance = ethData?.developerBalance ?? 0;
+  const usdValue = ethData?.stats?.usdValue ?? 0;
+  const phpValue = ethData?.stats?.phpValue ?? 0;
+  const recentCredits = (ethData?.transactions ?? []).slice(0, 3);
+  const developerSharePercent = Number((ethData?.developerShareRate ?? 0.1) * 100);
 
   return (
     <section className="wallet-overview">
@@ -14,6 +33,9 @@ function WalletOverview() {
           <h1 className="wallet-overview__title">Wallet</h1>
           <p className="wallet-overview__subtitle">
             Developer wallet summary for incoming game purchase revenue.
+            {` Displays ${developerSharePercent.toFixed(0)}% share from each purchase.`}
+            {loading ? " Syncing live data..." : ""}
+            {error ? " Showing fallback data." : ""}
           </p>
         </div>
       </header>
@@ -21,7 +43,9 @@ function WalletOverview() {
       <div className="wallet-overview__hero">
         <div className="wallet-card">
           <div className="wallet-card__top">
-            <span className="wallet-card__brand">Ganache Wallet</span>
+            <span className="wallet-card__brand">
+              {walletMode === "virtual" ? "Developer Web Wallet" : "Developer Wallet"}
+            </span>
             <WalletOutlined className="wallet-card__icon" />
           </div>
           <div className="wallet-card__balance">
@@ -30,7 +54,7 @@ function WalletOverview() {
           </div>
           <div className="wallet-card__meta">
             <span>{walletAddress}</span>
-            <span>Incoming only</span>
+            <span>{walletMode === "virtual" ? "Virtual incoming ledger" : "Incoming only"}</span>
           </div>
         </div>
 
@@ -39,7 +63,7 @@ function WalletOverview() {
             <div className="wallet-stat__icon"><SafetyCertificateOutlined /></div>
             <div>
               <h2>Wallet Type</h2>
-              <p>Developer Revenue Wallet</p>
+              <p>{walletMode === "virtual" ? "Developer Virtual Revenue Wallet" : "Developer Revenue Wallet"}</p>
             </div>
           </article>
           <article className="wallet-stat">
@@ -82,6 +106,18 @@ function WalletOverview() {
               <dt>Game Revenue Source</dt>
               <dd>Gem purchases</dd>
             </div>
+            <div>
+              <dt>Share Rule</dt>
+              <dd>{developerSharePercent.toFixed(0)}% of each purchase ETH</dd>
+            </div>
+            <div>
+              <dt>Contract Address</dt>
+              <dd>{ethData?.contractAddress ?? "Not configured"}</dd>
+            </div>
+            <div>
+              <dt>Contract Balance</dt>
+              <dd>{(ethData?.contractBalance ?? 0).toFixed(4)} ETH</dd>
+            </div>
           </dl>
         </article>
       </div>
@@ -89,17 +125,29 @@ function WalletOverview() {
       <article className="wallet-panel wallet-panel--list">
         <h2>Recent Wallet Credits</h2>
         <div className="wallet-credit-list">
+          {recentCredits.map((credit) => (
+            <div key={credit.id} className="wallet-credit-item">
+              <span>{credit.playerName} bought {getDisplayGems(credit)} gems ({credit.grossAmount.toFixed(4)} ETH)</span>
+              <strong>+{credit.developerShareAmount.toFixed(4)} ETH share</strong>
+            </div>
+          ))}
+        </div>
+      </article>
+
+      <article className="wallet-panel wallet-panel--list">
+        <h2>Debug Panel</h2>
+        <div className="wallet-credit-list">
           <div className="wallet-credit-item">
-            <span>Player_Alpha gem purchase</span>
-            <strong>+0.50 ETH</strong>
+            <span>Active Source Wallet</span>
+            <strong>{ethData?.sourceWallet || "Not provided"}</strong>
           </div>
           <div className="wallet-credit-item">
-            <span>Player_Beta gem purchase</span>
-            <strong>+1.20 ETH</strong>
+            <span>Contract Address</span>
+            <strong>{ethData?.contractAddress || "Not configured"}</strong>
           </div>
           <div className="wallet-credit-item">
-            <span>Player_Gamma gem purchase</span>
-            <strong>+0.30 ETH</strong>
+            <span>Last Event Block</span>
+            <strong>{ethData?.lastEventBlock || 0}</strong>
           </div>
         </div>
       </article>

@@ -4,10 +4,12 @@ import DashboardLayout from "../presentation/components/DashboardLayout";
 import Overview from "../presentation/components/Overview";
 import WalletOverview from "../presentation/components/WalletOverview";
 import ActivityOverview from "../presentation/components/ActivityOverview";
+import useEthereumData from "../application/hooks/useEthereumData";
 
 function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [currentNav, setCurrentNav] = useState("dashboard");
+  const { ethData, loading, error } = useEthereumData();
 
   const handleLoadingFinish = () => {
     setIsLoading(false);
@@ -19,12 +21,12 @@ function Home() {
 
   return (
     <DashboardLayout currentNav={currentNav} onNavChange={setCurrentNav}>
-      {currentNav === "dashboard" && <Overview />}
+      {currentNav === "dashboard" && <Overview ethData={ethData} loading={loading} error={error} />}
       {currentNav === "wallet" && (
-        <WalletOverview />
+        <WalletOverview ethData={ethData} loading={loading} error={error} />
       )}
       {currentNav === "activity" && (
-        <ActivityOverview />
+        <ActivityOverview ethData={ethData} loading={loading} error={error} />
       )}
     </DashboardLayout>
   );

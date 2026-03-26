@@ -38,7 +38,7 @@ The frontend currently includes:
 This project uses a separated frontend and backend structure:
 
 ```text
-Gamedev/
+	Gamedev/
 	README.md
 	frontend/
 	backend/
@@ -75,7 +75,32 @@ Clean architecture note:
 
 The backend is intended to expose APIs for wallet status, transaction history, and future Ganache integration.
 
-At the moment, the backend can remain simple until the monitoring logic is connected.
+Current backend uses a clean architecture split:
+
+```text
+backend/
+	index.js
+	src/
+		application/
+			useCases/
+		infrastructure/
+			config/
+			ethereum/
+		presentation/
+			routes/
+			server.js
+```
+
+The API currently provides:
+
+- `GET /health` for health checks
+- `GET /api/ethereum` for wallet balance + contract balance + latest incoming transactions
+- `GET /api/transactions` for separated purchase-event and transfer lists
+
+This setup supports both models:
+
+- contract-hold-then-withdraw (ETH stays in contract until withdraw)
+- direct payout (ETH goes straight to developer wallet)
 
 ## Prerequisites
 
@@ -106,8 +131,21 @@ npm run dev
 ```powershell
 cd "c:\Users\Keane\Desktop\Git Uploads\Gamedev\backend"
 npm install
-node server.js
+copy .env.example .env
+npm run dev
 ```
+
+Set `.env` values before running backend:
+
+- `GANACHE_RPC_URL` (usually `http://127.0.0.1:7545`)
+- `DEV_WALLET` (developer wallet address)
+- `CONTRACT_ADDRESS` (deployed shop contract)
+- `CHAIN_ID` (Ganache chain id, usually `1337`)
+
+Optional:
+
+- `EVENT_ABI_JSON` if your purchase event signature is custom
+- `BLOCK_LOOKBACK` for scan depth
 
 ## Current System Status
 
@@ -122,3 +160,20 @@ That means:
 ## Planned Next Step
 
 The next logical feature is to connect the frontend to the backend and then connect the backend to Ganache so the dashboard can read actual incoming ETH transactions from gem purchases.
+
+## Current Integration Flow
+
+The monitoring flow now works like this:
+
+1. Unity sends purchase transaction to Ganache.
+2. Contract emits purchase events and/or transfers ETH based on your payout model.
+3. Backend reads chain data from Ganache RPC.
+4. Frontend polls backend every few seconds and updates Dashboard, Wallet, and Activity cards/tables.
+
+## Run All Systems Together
+
+1. Start Ganache Desktop.
+2. Start backend API (`npm run dev` in `backend`).
+3. Start wallet UI (`npm run dev` in `frontend`).
+4. Run Unity game and trigger gem purchases.
+5. Monitor incoming ETH from the developer wallet dashboard.

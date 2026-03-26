@@ -1,41 +1,55 @@
 import { ClockCircleOutlined, CheckCircleOutlined, ShoppingCartOutlined, ThunderboltOutlined } from "@ant-design/icons";
 import "../styles/components/ActivityOverview.css";
 
-function ActivityOverview() {
-  const activityFeed = [
-    {
-      id: 1,
-      title: "Gem purchase credited",
-      description: "Player_Alpha purchased 500 gems and sent 0.50 ETH to the developer wallet.",
-      time: "2 minutes ago",
-      icon: <ShoppingCartOutlined />,
-      status: "success",
-    },
-    {
-      id: 2,
-      title: "Wallet balance updated",
-      description: "Revenue wallet balance increased after confirmed incoming transaction.",
-      time: "8 minutes ago",
-      icon: <ThunderboltOutlined />,
-      status: "success",
-    },
-    {
-      id: 3,
-      title: "Block confirmation completed",
-      description: "Ganache confirmed the latest gem purchase transfer to the system wallet.",
-      time: "11 minutes ago",
-      icon: <CheckCircleOutlined />,
-      status: "success",
-    },
-    {
-      id: 4,
-      title: "Monitoring cycle executed",
-      description: "Activity tracker scanned for new incoming ETH transactions from game purchases.",
-      time: "18 minutes ago",
-      icon: <ClockCircleOutlined />,
-      status: "neutral",
-    },
-  ];
+const ETH_PER_GEM = 0.001;
+
+function getDisplayGems(tx) {
+  const direct = Number(tx?.gems || 0);
+  if (direct > 0) {
+    return direct;
+  }
+
+  const gross = Number(tx?.grossAmount || 0);
+  if (gross <= 0) {
+    return 0;
+  }
+
+  return Math.max(0, Math.round(gross / ETH_PER_GEM));
+}
+
+function ActivityOverview({ ethData, loading }) {
+  const transactions = ethData?.transactions ?? [];
+
+  const activityFeed = transactions.slice(0, 4).map((tx, index) => {
+    const gemsPurchased = getDisplayGems(tx);
+
+    return {
+    id: tx.id ?? index + 1,
+    title: index === 0 ? "Gem purchase credited" : "Wallet balance updated",
+    description: `${tx.playerName} purchased ${gemsPurchased} gems (spent ${tx.grossAmount.toFixed(4)} ETH). Developer share credited: ${tx.developerShareAmount.toFixed(4)} ETH.`,
+    time: tx.timestamp,
+    icon: index % 2 === 0 ? <ShoppingCartOutlined /> : <ThunderboltOutlined />,
+    status: "success",
+    };
+  });
+
+  activityFeed.push({
+    id: "chain-confirmation",
+    title: "Block confirmation completed",
+    description: "Ganache confirmed the latest gem purchase transfer to the monitoring wallet.",
+    time: "moments ago",
+    icon: <CheckCircleOutlined />,
+    status: "success",
+  });
+
+  activityFeed.push({
+    id: "monitoring-cycle",
+    title: "Monitoring cycle executed",
+    description: "Activity tracker scanned for new incoming ETH transactions from game purchases.",
+    time: loading ? "syncing" : "just now",
+    icon: <ClockCircleOutlined />,
+    status: "neutral",
+  });
 
   return (
     <section className="activity-overview">
@@ -51,17 +65,17 @@ function ActivityOverview() {
       <div className="activity-overview__summary">
         <article className="activity-stat">
           <span className="activity-stat__label">Processed Today</span>
-          <strong className="activity-stat__value">27 Events</strong>
+          <strong className="activity-stat__value">{transactions.length} Events</strong>
           <p className="activity-stat__meta">Purchase activity and wallet updates combined.</p>
         </article>
         <article className="activity-stat">
           <span className="activity-stat__label">Confirmed Credits</span>
-          <strong className="activity-stat__value">14 Credits</strong>
+          <strong className="activity-stat__value">{transactions.length} Credits</strong>
           <p className="activity-stat__meta">Incoming ETH successfully received in the wallet.</p>
         </article>
         <article className="activity-stat">
           <span className="activity-stat__label">Latest Scan</span>
-          <strong className="activity-stat__value">18:42 PM</strong>
+          <strong className="activity-stat__value">{new Date(ethData?.lastUpdate || Date.now()).toLocaleTimeString()}</strong>
           <p className="activity-stat__meta">Monitoring scheduler checked Ganache for new transfers.</p>
         </article>
       </div>
